@@ -79,6 +79,26 @@ static void lcd_draw_line_maximized(struct gb_s * gb, const uint8_t * input_pixe
   }
 }
 
+static void lcd_draw_line_maximized_ratio(struct gb_s * gb, const uint8_t * input_pixels, const uint_fast8_t line) {
+  // Nearest neighbor scaling of a 160x144 texture to a 266x240 resolution (to keep the ratio)
+  // Horizontally, we multiply by 1.66 (160*1.66 = 266)
+  uint16_t output_pixels[266];
+  for (int i=0; i<LCD_WIDTH; i++) {
+    uint16_t color = eadk_color_from_gb_pixel(input_pixels[i]);
+    // We can't use floats, so we use a fixed point representation
+    output_pixels[166*i/100] = color;
+    output_pixels[166*i/100+1] = color;
+    output_pixels[166*i/100+2] = color;
+  }
+
+  // Vertically, we want to scale by a 5/3 ratio. So we need to make 5 lines out of three:  we double two lines out of three.
+  uint16_t y = (5*line)/3;
+  eadk_display_push_rect((eadk_rect_t){(320 - 266) / 2, y, 266, 1}, output_pixels);
+  if (line%3 != 0) {
+    eadk_display_push_rect((eadk_rect_t){(320 - 266) / 2, y + 1, 266, 1}, output_pixels);
+  }
+}
+
 enum save_status_e {
   SAVE_READ_OK,
   SAVE_WRITE_OK,
@@ -191,7 +211,7 @@ int main(int argc, char * argv[]) {
   size_t save_size = gb_get_save_size(&gb);
   priv.cart_ram = read_save_file(save_size);
 
-  gb_init_lcd(&gb, lcd_draw_line_maximized);
+  gb_init_lcd(&gb, lcd_draw_line_maximized_ratio);
 
   while (true) {
     gb_run_frame(&gb);
@@ -221,6 +241,10 @@ int main(int argc, char * argv[]) {
     if (eadk_keyboard_key_down(kbd, eadk_key_minus)) {
       eadk_display_push_rect_uniform(eadk_screen_rect, eadk_color_black);
       gb.display.lcd_draw_line = lcd_draw_line_centered;
+    }
+    if (eadk_keyboard_key_down(kbd, eadk_key_multiplication)) {
+      eadk_display_push_rect_uniform(eadk_screen_rect, eadk_color_black);
+      gb.display.lcd_draw_line = lcd_draw_line_maximized_ratio;
     }
     if (eadk_keyboard_key_down(kbd, eadk_key_toolbox)) {
       // We are not using the cooldown because it would slow down the emulation
