@@ -8,8 +8,8 @@ This app is a [Game Boy](https://en.wikipedia.org/wiki/Game_Boy) emulator that r
 
 To install this app, you'll need to:
 1. Download the latest `peanutgb.nwa` file from the [Releases](https://github.com/nwagyu/peanutgb/releases) page
-2. Extract a `cartridge.gb` ROM dump from your GameBoyt cartridge, or, alternatively, use the provided `src/flappyboy.gb` file.
-2. Head to [my.numworks.com/apps](https://my.numworks.com/apps) to send the `nwa` file on your calculator along the `gb` file.
+2. Extract a `cartridge.gb` ROM dump from your GameBoy cartridge, or, alternatively, use the provided `src/flappyboy.gb` file.
+3. Head to [my.numworks.com/apps](https://my.numworks.com/apps) to send the `nwa` file on your calculator along the `gb` file.
 
 ## How to use the app
 
@@ -22,6 +22,9 @@ The controls are pretty obvious because the GameBoy's gamepad looks a lot like t
 |B|OK|
 |Select|Shift|
 |Start|Backspace|
+|Start (alternate)|Alpha|
+|Toolbox|Write current save to storage|
+|0|Write current save to storage and exit|
 
 The following keys will change the behavior of the emulator:
 
@@ -30,7 +33,9 @@ The following keys will change the behavior of the emulator:
 |1|Use the original Game Boy color palette|
 |2|Use a pure grayscale palette|
 |3|Use an inverted grayscale palette|
+|4|Use Peanut-GB original palette|
 |+|Render on the entire screen|
+|×|Render on the entire screen but keep ratio|
 |-|Render at a 1:1 scale|
 
 ## Build the app
