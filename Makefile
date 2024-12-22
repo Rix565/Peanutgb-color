@@ -12,6 +12,7 @@ CFLAGS += $(shell $(NWLINK) eadk-cflags)
 CFLAGS += -Os
 CPPFLAGS += -I$(LIBS_PATH)/include
 CFLAGS += -fno-exceptions -fno-unwind-tables
+CFLAGS += -Wno-error=incompatible-pointer-types
 
 LDFLAGS += --specs=nano.specs
 LDFLAGS += -L$(LIBS_PATH)/lib
@@ -50,7 +51,7 @@ output/%.elf: output/%.nwa src/flappyboy.gb
 	@echo "ELF     $@"
 	$(Q) $(NWLINK) nwa-elf --external-data src/flappyboy.gb $< $@
 
-output/peanutgb.nwa: output/main.o output/icon.o
+output/peanutgb.nwa: output/main.o output/storage.o output/lz4.o output/icon.o
 	@echo "LD      $@"
 	$(Q) $(CC) $(CPPFLAGS) $(CFLAGS) -Wl,--relocatable -nostartfiles $(LDFLAGS) $^ -o $@
 
