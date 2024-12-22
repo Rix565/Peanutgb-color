@@ -44,6 +44,7 @@ void gb_error(struct gb_s *gb, const enum gb_error_e gb_err, const uint16_t val)
   return;
 }
 
+eadk_color_t palette_peanut_GB[4] = {0x9DE1, 0x8D61, 0x3306, 0x09C1};
 eadk_color_t palette_original[4] = {0x8F80, 0x24CC, 0x4402, 0x0A40};
 eadk_color_t palette_gray[4] = {eadk_color_white, 0xAD55, 0x52AA, eadk_color_black};
 eadk_color_t palette_gray_negative[4] = {eadk_color_black, 0x52AA, 0xAD55, eadk_color_white};
@@ -234,6 +235,9 @@ int main(int argc, char * argv[]) {
     }
     if (eadk_keyboard_key_down(kbd, eadk_key_three)) {
       palette = palette_gray_negative;
+    }
+    if (eadk_keyboard_key_down(kbd, eadk_key_four)) {
+      palette = palette_peanut_GB;
     }
     if (eadk_keyboard_key_down(kbd, eadk_key_plus)) {
       gb.display.lcd_draw_line = lcd_draw_line_maximized;
