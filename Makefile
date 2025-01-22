@@ -2,14 +2,15 @@ Q ?= @
 CC = arm-none-eabi-gcc
 AR = arm-none-eabi-ar
 RANLIB = arm-none-eabi-ranlib
-NWLINK = npx --yes -- nwlink@0.0.15
+NWLINK = npx --yes -- nwlink@0.0.19
 LINK_GC = 1
 LTO = 1
 
 LIBS_PATH=$(shell pwd)/output/libs
 
-CFLAGS += $(shell $(NWLINK) eadk-cflags)
-CFLAGS += -Os
+CFLAGS += $(shell $(NWLINK) eadk-cflags-device)
+CFLAGS += -O3
+LDFLAGS += -O3 -flto -fwhole-program
 CPPFLAGS += -I$(LIBS_PATH)/include
 CFLAGS += -fno-exceptions -fno-unwind-tables
 CFLAGS += -Wno-error=incompatible-pointer-types

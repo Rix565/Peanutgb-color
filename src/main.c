@@ -1,4 +1,5 @@
 #include <eadk.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -6,9 +7,14 @@
 #include "lz4.h"
 #include "storage.h"
 
-
 // Game name is max 0x10 bytes (with null), and we need to add ".gbs"
 #define FILENAME_BUFFER_SIZE 0x10 + 4
+
+#define ENABLE_FRAME_LIMITER 1
+#define TARGET_FRAME_DURATION 16
+#define AUTOMATIC_FRAME_SKIPPING 1
+// Useful when AUTOMATIC_FRAME_SKIPPING is disabled
+#define FRAME_SKIPPING_DEFAULT_STATE false
 
 const char eadk_app_name[] __attribute__((section(".rodata.eadk_app_name"))) = "Game Boy";
 const uint32_t eadk_api_level  __attribute__((section(".rodata.eadk_api_level"))) = 0;
@@ -50,53 +56,43 @@ eadk_color_t palette_gray[4] = {eadk_color_white, 0xAD55, 0x52AA, eadk_color_bla
 eadk_color_t palette_gray_negative[4] = {eadk_color_black, 0x52AA, 0xAD55, eadk_color_white};
 eadk_color_t * palette = palette_original;
 
-eadk_color_t eadk_color_from_gb_pixel(uint8_t gb_pixel) {
+inline eadk_color_t eadk_color_from_gb_pixel(uint8_t gb_pixel) {
     uint8_t gb_color = gb_pixel & 0x3;
     return palette[gb_color];
 }
 
 static void lcd_draw_line_centered(struct gb_s * gb, const uint8_t * input_pixels, const uint_fast8_t line) {
   eadk_color_t output_pixels[LCD_WIDTH];
+
+  #pragma unroll 40
   for (int i=0; i<LCD_WIDTH; i++) {
     output_pixels[i] = eadk_color_from_gb_pixel(input_pixels[i]);
   }
   eadk_display_push_rect((eadk_rect_t){(EADK_SCREEN_WIDTH-LCD_WIDTH)/2, (EADK_SCREEN_HEIGHT-LCD_HEIGHT)/2+line, LCD_WIDTH, 1}, output_pixels);
 }
 
-static void lcd_draw_line_maximized(struct gb_s * gb, const uint8_t * input_pixels, const uint_fast8_t line) {
-  // Nearest neighbor scaling of a 160x144 texture to a 320x240 resolution
-  // Horizontally, we just double
-  eadk_color_t output_pixels[2*LCD_WIDTH];
-  for (int i=0; i<LCD_WIDTH; i++) {
-    eadk_color_t color = eadk_color_from_gb_pixel(input_pixels[i]);
-    output_pixels[2*i] = color;
-    output_pixels[2*i+1] = color;
-  }
-  // Vertically, we want to scale by a 5/3 ratio. So we need to make 5 lines out of three:  we double two lines out of three.
-  uint16_t y = (5*line)/3;
-  eadk_display_push_rect((eadk_rect_t){0, y, 2*LCD_WIDTH, 1}, output_pixels);
-  if (line%3 != 0) {
-    eadk_display_push_rect((eadk_rect_t){0, y+1, 2*LCD_WIDTH, 1}, output_pixels);
-  }
-}
+void lcd_draw_line_dummy(struct gb_s *gb, const uint8_t pixels[LCD_WIDTH], const uint_fast8_t line) {}
 
 static void lcd_draw_line_maximized_ratio(struct gb_s * gb, const uint8_t * input_pixels, const uint_fast8_t line) {
   // Nearest neighbor scaling of a 160x144 texture to a 266x240 resolution (to keep the ratio)
   // Horizontally, we multiply by 1.66 (160*1.66 = 266)
   uint16_t output_pixels[266];
+
+  #pragma unroll 40
   for (int i=0; i<LCD_WIDTH; i++) {
     uint16_t color = eadk_color_from_gb_pixel(input_pixels[i]);
-    // We can't use floats, so we use a fixed point representation
+    // We can't use floats for performance reason, so we use a fixed point
+    // representation
     output_pixels[166*i/100] = color;
+    // This line is useless 1/3 times, but using an if is slower
     output_pixels[166*i/100+1] = color;
-    output_pixels[166*i/100+2] = color;
   }
 
   // Vertically, we want to scale by a 5/3 ratio. So we need to make 5 lines out of three:  we double two lines out of three.
   uint16_t y = (5*line)/3;
-  eadk_display_push_rect((eadk_rect_t){(320 - 266) / 2, y, 266, 1}, output_pixels);
+  eadk_display_push_rect((eadk_rect_t){(320 - 265) / 2, y, 265, 1}, output_pixels);
   if (line%3 != 0) {
-    eadk_display_push_rect((eadk_rect_t){(320 - 266) / 2, y + 1, 266, 1}, output_pixels);
+    eadk_display_push_rect((eadk_rect_t){(320 - 265) / 2, y + 1, 265, 1}, output_pixels);
   }
 }
 
@@ -180,6 +176,8 @@ void write_save_file(char* data, size_t size) {
   int compressed_size = LZ4_compress_default(data, output, size, max_scriptstore_size);
 
   if (compressed_size > 0) {
+    // TODO: Backup the previous save to a mallocated buffer to restore it in
+    // case the storage is too full for the new save to be written
     extapp_fileErase(save_name);
     if (extapp_fileWrite(save_name, output, compressed_size)) {
       saveMessage = SAVE_WRITE_OK;
@@ -193,6 +191,15 @@ void write_save_file(char* data, size_t size) {
   free(output);
 }
 
+void willExecuteDFU() { asm("svc 54"); }
+void didExecuteDFU() { asm("svc 51"); }
+void suspend() { asm("svc 44"); }
+
+void pre_exit() {
+  didExecuteDFU();
+}
+
+
 int main(int argc, char * argv[]) {
   eadk_display_push_rect_uniform(eadk_screen_rect, eadk_color_black);
 
@@ -205,6 +212,7 @@ int main(int argc, char * argv[]) {
 
   int ret = gb_init(&gb, gb_rom_read, gb_cart_ram_read, gb_cart_ram_write, gb_error, &priv);
   if (ret != GB_INIT_NO_ERROR) {
+    pre_exit();
     return -1;
   }
 
@@ -214,14 +222,33 @@ int main(int argc, char * argv[]) {
 
   gb_init_lcd(&gb, lcd_draw_line_maximized_ratio);
 
+  bool MSpFfCounter = true;
+  bool wasMSpFPressed = false;
+  uint32_t lastMSpF = 0;
+
+  #if ENABLE_FRAME_LIMITER
+  // We use a "smart" frame limiter: for each frame, we add
+  // `frame duration - target frame time` to our budget. If the frame was faster
+  // than target, we sleep for (simplified version without taking the case where
+  // time budget > target frame time - last frame duration):
+  // target frame time - last frame duration - time budget
+  // This way, we will keep an average frame duration consistant.
+  uint32_t timeBudget = 0;
+  #endif
+
+  // Skip 1/2 frame, spare 3 ms/f on my N0110
+  bool frameSkipping = FRAME_SKIPPING_DEFAULT_STATE;
+  void * drawLineMode = lcd_draw_line_maximized_ratio;
+
   while (true) {
+    uint64_t start = eadk_timing_millis();
     gb_run_frame(&gb);
 
     eadk_keyboard_state_t kbd = eadk_keyboard_scan();
     gb.direct.joypad_bits.a = !eadk_keyboard_key_down(kbd, eadk_key_back);
     gb.direct.joypad_bits.b = !eadk_keyboard_key_down(kbd, eadk_key_ok);
-    gb.direct.joypad_bits.select = !eadk_keyboard_key_down(kbd, eadk_key_shift);
-    gb.direct.joypad_bits.start = !(eadk_keyboard_key_down(kbd, eadk_key_backspace) || eadk_keyboard_key_down(kbd, eadk_key_alpha));
+    gb.direct.joypad_bits.select = !(eadk_keyboard_key_down(kbd, eadk_key_shift) || eadk_keyboard_key_down(kbd, eadk_key_home));
+    gb.direct.joypad_bits.start = !(eadk_keyboard_key_down(kbd, eadk_key_backspace) || eadk_keyboard_key_down(kbd, eadk_key_alpha) || eadk_keyboard_key_down(kbd, eadk_key_on_off));
     gb.direct.joypad_bits.right = !eadk_keyboard_key_down(kbd, eadk_key_right);
     gb.direct.joypad_bits.left = !eadk_keyboard_key_down(kbd, eadk_key_left);
     gb.direct.joypad_bits.up = !eadk_keyboard_key_down(kbd, eadk_key_up);
@@ -240,27 +267,125 @@ int main(int argc, char * argv[]) {
       palette = palette_peanut_GB;
     }
     if (eadk_keyboard_key_down(kbd, eadk_key_plus)) {
-      gb.display.lcd_draw_line = lcd_draw_line_maximized;
+      gb.display.lcd_draw_line = lcd_draw_line_maximized_ratio;
+      drawLineMode = lcd_draw_line_maximized_ratio;
     }
     if (eadk_keyboard_key_down(kbd, eadk_key_minus)) {
       eadk_display_push_rect_uniform(eadk_screen_rect, eadk_color_black);
       gb.display.lcd_draw_line = lcd_draw_line_centered;
+      drawLineMode = lcd_draw_line_centered;
     }
-    if (eadk_keyboard_key_down(kbd, eadk_key_multiplication)) {
+    if (eadk_keyboard_key_down(kbd, eadk_key_division)) {
       eadk_display_push_rect_uniform(eadk_screen_rect, eadk_color_black);
-      gb.display.lcd_draw_line = lcd_draw_line_maximized_ratio;
+      gb.display.lcd_draw_line = lcd_draw_line_dummy;
+      drawLineMode = lcd_draw_line_dummy;
     }
     if (eadk_keyboard_key_down(kbd, eadk_key_toolbox)) {
-      // We are not using the cooldown because it would slow down the emulation
-      // for something useless (we are writing into ram, not flash)
       write_save_file(priv.cart_ram, save_size);
+    }
+    if (eadk_keyboard_key_down(kbd, eadk_key_seven)) {
+      if (!wasMSpFPressed) {
+        MSpFfCounter = !MSpFfCounter;
+        wasMSpFPressed = true;
+        eadk_display_push_rect_uniform(eadk_screen_rect, eadk_color_black);
+      }
+    }
+    if (eadk_keyboard_key_down(kbd, eadk_key_nine)) {
+      // willExecuteDFU disable interrupts, CircuitBreaker and the keyboard, so
+      // to get the keyboard back, we need to suspend the calculator as the
+      // calculator will enable back the keyboard when going out of sleep,
+      // without restoring circuitBreaker, effectively bypassing Home/OnOff
+      // management by the kernel
+      // It also have the nice side effect of allowing to suspend the calculator
+      // without exiting, which is nice as savestates are not implemented
+      willExecuteDFU();
+      suspend();
+
+      // Clear the screen as framebuffer is lost when the screen is shut down
+      eadk_display_push_rect_uniform(eadk_screen_rect, eadk_color_black);
     }
     if (eadk_keyboard_key_down(kbd, eadk_key_zero)) {
       // Save and exit
+      // TODO: free buffers as we don't need them anymore and saving require a
+      // bit of memory
+      // In case of OOM, save won't be written
       write_save_file(priv.cart_ram, save_size);
+      pre_exit();
       return 0;
     }
+
+    uint64_t end = eadk_timing_millis();
+    uint16_t MSpF = (uint16_t)(end - start);
+    if (MSpFfCounter) {
+      // We need to average the MSpF as skipped frames are faster
+      uint16_t MSpFAverage = (MSpF + lastMSpF) / 2;
+      char buffer[100];
+      // sprintf(buffer, "%d ms/f", MSpFAverage);
+      sprintf(buffer, "%d ms/f, %d ", MSpFAverage, timeBudget);
+      eadk_point_t location = {2, 230};
+      eadk_display_draw_string(buffer, location, false, eadk_color_white, eadk_color_black);
+    }
+
+    if (frameSkipping) {
+      if (gb.display.lcd_draw_line != lcd_draw_line_dummy) {
+        drawLineMode = gb.display.lcd_draw_line;
+        gb.display.lcd_draw_line = lcd_draw_line_dummy;
+      } else {
+        gb.display.lcd_draw_line = drawLineMode;
+      }
+    }
+
+    #if ENABLE_FRAME_LIMITER
+    uint32_t differenceToTarget = abs(TARGET_FRAME_DURATION - MSpF);
+
+    if (TARGET_FRAME_DURATION - MSpF > 0) {
+      // Frame was faster than target, so let's slow down if we have time to
+      // catch up
+
+      // If on previous frames we were
+      if (timeBudget >= differenceToTarget) {
+        // We were too slow at previous frames so we have to catch up
+        timeBudget -= differenceToTarget;
+      } else if (timeBudget > 0) {
+        // We can catch up everything on one frame, so let's sleep a bit less
+        // than what we would have done if we weren't late
+        uint32_t time_to_sleep = differenceToTarget - timeBudget;
+        eadk_timing_msleep(time_to_sleep);
+        timeBudget = 0;
+      } else {
+        // We don't have time to catch up, so we just sleep until we get to 16ms/f
+        eadk_timing_msleep(differenceToTarget);
+
+        #if AUTOMATIC_FRAME_SKIPPING
+        // Disable frame skipping as we are running faster than required
+        frameSkipping = false;
+        gb.display.lcd_draw_line = drawLineMode;
+        #endif
+      }
+    } else {
+      // Comparaison is technically not required, but we do this avoid the
+      // performance cost of duplicate assignation when we are at the maximum
+      // time budget, which is often the case when lagging
+      if (timeBudget < TARGET_FRAME_DURATION) {
+        // Frame was slower than target, so we need to catch up.
+        timeBudget += differenceToTarget;
+
+        if (timeBudget >= TARGET_FRAME_DURATION) {
+          timeBudget = TARGET_FRAME_DURATION;
+
+          #if AUTOMATIC_FRAME_SKIPPING
+          // Enable frame skipping in an attempt to speed up emulation
+          frameSkipping = true;
+          #endif
+        }
+      }
+    }
+    #endif
+
+    lastMSpF = MSpF;
   }
+
+  pre_exit();
 
   return 0;
 }
