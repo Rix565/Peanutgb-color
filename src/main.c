@@ -275,11 +275,11 @@ int main(int argc, char * argv[]) {
       gb.display.lcd_draw_line = lcd_draw_line_centered;
       drawLineMode = lcd_draw_line_centered;
     }
-    if (eadk_keyboard_key_down(kbd, eadk_key_division)) {
-      eadk_display_push_rect_uniform(eadk_screen_rect, eadk_color_black);
-      gb.display.lcd_draw_line = lcd_draw_line_dummy;
-      drawLineMode = lcd_draw_line_dummy;
-    }
+    // if (eadk_keyboard_key_down(kbd, eadk_key_division)) {
+    //   eadk_display_push_rect_uniform(eadk_screen_rect, eadk_color_black);
+    //   gb.display.lcd_draw_line = lcd_draw_line_dummy;
+    //   drawLineMode = lcd_draw_line_dummy;
+    // }
     if (eadk_keyboard_key_down(kbd, eadk_key_toolbox)) {
       write_save_file(priv.cart_ram, save_size);
     }
