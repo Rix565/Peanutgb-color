@@ -320,8 +320,8 @@ int main(int argc, char * argv[]) {
       // We need to average the MSpF as skipped frames are faster
       uint16_t MSpFAverage = (MSpF + lastMSpF) / 2;
       char buffer[100];
-      // sprintf(buffer, "%d ms/f", MSpFAverage);
-      sprintf(buffer, "%d ms/f, %d ", MSpFAverage, timeBudget);
+      sprintf(buffer, "%d ms/f", MSpFAverage);
+      // sprintf(buffer, "%d ms/f, %d ", MSpFAverage, timeBudget);
       eadk_point_t location = {2, 230};
       eadk_display_draw_string(buffer, location, false, eadk_color_white, eadk_color_black);
     }

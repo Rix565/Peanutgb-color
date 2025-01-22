@@ -57,7 +57,7 @@ It also have the nice side effect of allowing suspending the calculator without
 exiting the emulator which is useful in a lot of situations. For example, is
 you need to temporary suspend the calculator in a hurry as the teacher is
 coming, all you need to do is pressing the "9" key (but you are not playing
-during class, right? _~insert Anakin and Padme meme here~_)
+during class, right? _-insert Anakin and Padme meme here-_)
 
 For the technical details on what exactly happen when you press the 9 key, see
 below:
