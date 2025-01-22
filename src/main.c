@@ -222,7 +222,7 @@ int main(int argc, char * argv[]) {
 
   gb_init_lcd(&gb, lcd_draw_line_maximized_ratio);
 
-  bool MSpFfCounter = true;
+  bool MSpFfCounter = false;
   bool wasMSpFPressed = false;
   uint32_t lastMSpF = 0;
 
@@ -289,6 +289,8 @@ int main(int argc, char * argv[]) {
         wasMSpFPressed = true;
         eadk_display_push_rect_uniform(eadk_screen_rect, eadk_color_black);
       }
+    } else {
+      wasMSpFPressed = false;
     }
     if (eadk_keyboard_key_down(kbd, eadk_key_nine)) {
       // willExecuteDFU disable interrupts, CircuitBreaker and the keyboard, so
