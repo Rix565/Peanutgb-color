@@ -39,7 +39,6 @@ The following keys will change the behavior of the emulator:
 |3|Use an inverted grayscale palette|
 |4|Use Peanut-GB original palette|
 |+|Render on the entire screen|
-|×|Render on the entire screen but keep ratio|
 |-|Render at a 1:1 scale|
 
 ## About OnOff and Home keys
