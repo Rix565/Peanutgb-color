@@ -182,12 +182,12 @@ bool extapp_fileErase(const char * filename) {
 
   // Move the rest of the data
   // Why not len + 2 ?
-  memmove(offset, offset + len, (char *)extapp_nextFree() - offset);
+  char * nextFree = (char *)extapp_nextFree();
+  memmove(offset, offset + len, nextFree - offset);
 
   // Overwrite the rest of the storage with zeroes
   // the + 1 in len + 1 is for the uint16_t used for file size
-  memset(offset + *(uint16_t *)offset + 1, 0, len + 1);
-
+  memset(nextFree - len, 0, len);
 
   return true;
 }
