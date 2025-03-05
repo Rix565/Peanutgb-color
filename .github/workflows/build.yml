@@ -13,3 +13,11 @@ jobs:
         run: make build
       - name: Run make check
         run: make check
+      - name: Upload Linux ARM build
+        if: matrix.os == 'ubuntu-latest'
+        uses: actions/upload-artifact@v4.6.1
+        with:
+          name: "peanutgb"
+          path: "output/peanutgb.nwa"
+          if-no-files-found: error
+          retention-days: 30
