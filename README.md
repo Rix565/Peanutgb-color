@@ -1,8 +1,10 @@
-# Peanut-GB for NumWorks
+# Peanut-GB (color!) for NumWorks
 
 This app is a [Game Boy](https://en.wikipedia.org/wiki/Game_Boy) emulator that runs on the [NumWorks calculator](https://www.numworks.com). It is based off of the [Peanut-GB](https://github.com/deltabeard/Peanut-GB) emulator.
 
 Available on [Nwagyu](https://yaya-cout.github.io/Nwagyu/)
+
+This version is a fork based off Yaya-Cout's PeanutGB port, modified using code from the PeanutGB Color port to include color while retaining saving functionnality. 
 
 ## Install the app
 
