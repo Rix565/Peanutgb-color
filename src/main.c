@@ -54,7 +54,7 @@ eadk_color_t palette_peanut_GB[4] = {0x9DE1, 0x8D61, 0x3306, 0x09C1};
 eadk_color_t palette_original[4] = {0x8F80, 0x24CC, 0x4402, 0x0A40};
 eadk_color_t palette_gray[4] = {eadk_color_white, 0xAD55, 0x52AA, eadk_color_black};
 eadk_color_t palette_gray_negative[4] = {eadk_color_black, 0x52AA, 0xAD55, eadk_color_white};
-eadk_color_t palette_virtual_boy[4] = {0xE800, 0xA000, 0x5000, eadk_color_black}
+eadk_color_t palette_virtual_boy[4] = {0xE800, 0xA000, 0x5000, eadk_color_black};
 eadk_color_t * palette = palette_original;
 
 inline eadk_color_t eadk_color_from_gb_pixel(uint8_t gb_pixel) {
