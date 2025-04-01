@@ -298,7 +298,7 @@ int main(int argc, char * argv[]) {
       palette = palette_virtual_boy_inv;
     }
     if (eadk_keyboard_key_down(kbd, eadk_key_eight)) {
-      palette = palette_virtual_boy_inv;
+      palette = palette_worst_ever;
     }
     if (eadk_keyboard_key_down(kbd, eadk_key_plus)) {
       gb.display.lcd_draw_line = lcd_draw_line_maximized_ratio;
