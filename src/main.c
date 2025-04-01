@@ -51,8 +51,8 @@ void gb_error(struct gb_s *gb, const enum gb_error_e gb_err, const uint16_t val)
 }
 
 eadk_color_t palette_peanut_GB[4] = {0xaf5f, 0x7d5f, 0x7316, 0x1807};
-eadk_color_t palette_original[4] = {0xff12, 0x9e27, 0x1487, 0x167};
-eadk_color_t palette_gray[4] = {0xdff5, 0xfc8a, 0xd284, 0x4800};
+eadk_color_t palette_original[4] = {0xdff5, 0x9e27, 0x1487, 0x167};
+eadk_color_t palette_gray[4] = {0xff12, 0xfc8a, 0xd284, 0x4800};
 eadk_color_t palette_gray_negative[4] = {0xfeb5, 0xfc4e, 0xa22c, 0x3806};
 eadk_color_t palette_vb[4] = {eadk_color_black, 0x5000, 0xa000, 0xf800};
 eadk_color_t palette_green[4] = {0xc50f, 0x844a, 0x52e6, 0x31c3};
