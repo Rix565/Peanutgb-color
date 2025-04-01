@@ -57,6 +57,7 @@ eadk_color_t palette_gray_negative[4] = {eadk_color_black, 0x52AA, 0xAD55, eadk_
 eadk_color_t palette_virtual_boy[4] = {0xE800, 0xA000, 0x5000, eadk_color_black};
 eadk_color_t palette_virtual_boy_inv[4] = {eadk_color_black, 0x5000, 0xA000, 0xE800};
 eadk_color_t palette_worst_ever[4] = {0xf7e7, 0x7e0, 0xfa7a, 0x1f};
+eadk_color_t all_palletes = {palette_peanut_GB,palette_original,palette_gray, palette_gray_negative, palette_virtual_boy,palette_virtual_boy_inv,palette_worst_ever};
 eadk_color_t * palette = palette_original;
 
 inline eadk_color_t eadk_color_from_gb_pixel(uint8_t gb_pixel) {
@@ -261,6 +262,10 @@ int main(int argc, char * argv[]) {
   uint32_t timeBudget = 0;
   #endif
 
+  // Init variable for randomness (funny way to play a game)
+  bool funnyMode = false;
+  int index = 0;
+  
   // Skip 1/2 frame, spare 3 ms/f on my N0110
   bool frameSkipping = FRAME_SKIPPING_DEFAULT_STATE;
   void * drawLineMode = lcd_draw_line_maximized_ratio;
@@ -278,7 +283,6 @@ int main(int argc, char * argv[]) {
     gb.direct.joypad_bits.left = !eadk_keyboard_key_down(kbd, eadk_key_left);
     gb.direct.joypad_bits.up = !eadk_keyboard_key_down(kbd, eadk_key_up);
     gb.direct.joypad_bits.down = !eadk_keyboard_key_down(kbd, eadk_key_down);
-
     if (eadk_keyboard_key_down(kbd, eadk_key_one)) {
       palette = palette_original;
     }
@@ -299,6 +303,16 @@ int main(int argc, char * argv[]) {
     }
     if (eadk_keyboard_key_down(kbd, eadk_key_eight)) {
       palette = palette_worst_ever;
+    }
+    if (eadk_keyboard_key_down(kbd, eadk_key_exp)) {
+      funnyMode = true;
+    }
+    if (funnyMode) {
+      if(index==6){
+        index = 0;
+      }
+      palette = all_palettes[index]
+      index++:
     }
     if (eadk_keyboard_key_down(kbd, eadk_key_plus)) {
       gb.display.lcd_draw_line = lcd_draw_line_maximized_ratio;
