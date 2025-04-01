@@ -55,6 +55,8 @@ eadk_color_t palette_original[4] = {0x8F80, 0x24CC, 0x4402, 0x0A40};
 eadk_color_t palette_gray[4] = {eadk_color_white, 0xAD55, 0x52AA, eadk_color_black};
 eadk_color_t palette_gray_negative[4] = {eadk_color_black, 0x52AA, 0xAD55, eadk_color_white};
 eadk_color_t palette_virtual_boy[4] = {0xE800, 0xA000, 0x5000, eadk_color_black};
+eadk_color_t palette_virtual_boy_inv[4] = {eadk_color_black, 0x5000, 0xA000, 0xE800};
+eadk_color_t palette_worst_ever[4] = {0xf7e7, 0x7e0, 0xfa7a, 0x1f};
 eadk_color_t * palette = palette_original;
 
 inline eadk_color_t eadk_color_from_gb_pixel(uint8_t gb_pixel) {
@@ -291,6 +293,12 @@ int main(int argc, char * argv[]) {
     }
     if (eadk_keyboard_key_down(kbd, eadk_key_five)) {
       palette = palette_virtual_boy;
+    }
+    if (eadk_keyboard_key_down(kbd, eadk_key_six)) {
+      palette = palette_virtual_boy_inv;
+    }
+    if (eadk_keyboard_key_down(kbd, eadk_key_eight)) {
+      palette = palette_virtual_boy_inv;
     }
     if (eadk_keyboard_key_down(kbd, eadk_key_plus)) {
       gb.display.lcd_draw_line = lcd_draw_line_maximized_ratio;
