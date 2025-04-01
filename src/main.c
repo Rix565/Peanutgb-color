@@ -50,11 +50,12 @@ void gb_error(struct gb_s *gb, const enum gb_error_e gb_err, const uint16_t val)
   return;
 }
 
-eadk_color_t palette_peanut_GB[4] = {0x9DE1, 0x8D61, 0x3306, 0x09C1};
-eadk_color_t palette_original[4] = {0x8F80, 0x24CC, 0x4402, 0x0A40};
-eadk_color_t palette_gray[4] = {eadk_color_white, 0xAD55, 0x52AA, eadk_color_black};
-eadk_color_t palette_gray_negative[4] = {eadk_color_black, 0x52AA, 0xAD55, eadk_color_white};
-eadk_color_t palette_virtual_boy[4] = {0xE800, 0xA000, 0x5000, eadk_color_black};
+eadk_color_t palette_peanut_GB[4] = {0xaf5f, 0x7d5f, 0x7316, 0x1807};
+eadk_color_t palette_original[4] = {0xff12, 0x9e27, 0x1487, 0x167};
+eadk_color_t palette_gray[4] = {0xdff5, 0xfc8a, 0xd284, 0x4800};
+eadk_color_t palette_gray_negative[4] = {0xfeb5, 0xfc4e, 0xa22c, 0x3806};
+eadk_color_t palette_vb[4] = {eadk_color_black, 0x5000, 0xa000, 0xf800};
+eadk_color_t palette_green[4] = {0xc50f, 0x844a, 0x52e6, 0x31c3};
 eadk_color_t * palette = palette_original;
 
 inline eadk_color_t eadk_color_from_gb_pixel(uint8_t gb_pixel) {
@@ -62,60 +63,38 @@ inline eadk_color_t eadk_color_from_gb_pixel(uint8_t gb_pixel) {
     return palette[gb_color];
 }
 
-static void lcd_draw_line_centered(struct gb_s* gb, const uint8_t* input_pixels, const uint_fast8_t line) {
-    eadk_color_t output_pixels[LCD_WIDTH];
-    eadk_point_t point = { 0, line };
+static void lcd_draw_line_centered(struct gb_s * gb, const uint8_t * input_pixels, const uint_fast8_t line) {
+  eadk_color_t output_pixels[LCD_WIDTH];
 
-    //fix each pixel with gb->cgb.fixPalette
-    #pragma unroll 40
-    for (int i = 0; i < LCD_WIDTH; i++) {
-        if (gb->cgb.cgbMode) {
-            output_pixels[i] = gb->cgb.fixPalette[input_pixels[i]];
-            output_pixels[i] = (output_pixels[i] & 0x1F) << 11 | (output_pixels[i] & 0x3E0) << 1 | (output_pixels[i] & 0x7C00) >> 10;
-            output_pixels[i] = (output_pixels[i] & 0x1F) << 11 | (output_pixels[i] & 0x7E0) | (output_pixels[i] & 0xF800) >> 11;
-        }
-        else {
-            output_pixels[i] = eadk_color_from_gb_pixel(input_pixels[i]);
-        }
-    }
-    //dump output_pixels to screen
-    eadk_display_push_rect((eadk_rect_t) { (EADK_SCREEN_WIDTH - LCD_WIDTH) / 2, (EADK_SCREEN_HEIGHT - LCD_HEIGHT) / 2 + line, LCD_WIDTH, 1 }, output_pixels);
-
+  #pragma unroll 40
+  for (int i=0; i<LCD_WIDTH; i++) {
+    output_pixels[i] = eadk_color_from_gb_pixel(input_pixels[i]);
+  }
+  eadk_display_push_rect((eadk_rect_t){(EADK_SCREEN_WIDTH-LCD_WIDTH)/2, (EADK_SCREEN_HEIGHT-LCD_HEIGHT)/2+line, LCD_WIDTH, 1}, output_pixels);
 }
-
 
 void lcd_draw_line_dummy(struct gb_s *gb, const uint8_t pixels[LCD_WIDTH], const uint_fast8_t line) {}
 
 static void lcd_draw_line_maximized_ratio(struct gb_s * gb, const uint8_t * input_pixels, const uint_fast8_t line) {
   // Nearest neighbor scaling of a 160x144 texture to a 266x240 resolution (to keep the ratio)
   // Horizontally, we multiply by 1.66 (160*1.66 = 266)
-  eadk_color_t output_pixels[LCD_WIDTH];
-  uint16_t final_output_pixels[266];
+  uint16_t output_pixels[266];
 
   #pragma unroll 40
   for (int i=0; i<LCD_WIDTH; i++) {
-    if (gb->cgb.cgbMode) {
-        output_pixels[i] = gb->cgb.fixPalette[input_pixels[i]];
-        output_pixels[i] = (output_pixels[i] & 0x1F) << 11 | (output_pixels[i] & 0x3E0) << 1 | (output_pixels[i] & 0x7C00) >> 10;
-        output_pixels[i] = (output_pixels[i] & 0x1F) << 11 | (output_pixels[i] & 0x7E0) | (output_pixels[i] & 0xF800) >> 11;
-    }
-    else {
-        output_pixels[i] = eadk_color_from_gb_pixel(input_pixels[i]);
-    }
-
-    eadk_color_t color = output_pixels[i];
+    uint16_t color = eadk_color_from_gb_pixel(input_pixels[i]);
     // We can't use floats for performance reason, so we use a fixed point
     // representation
-    final_output_pixels[166*i/100] = color;
+    output_pixels[166*i/100] = color;
     // This line is useless 1/3 times, but using an if is slower
-    final_output_pixels[166*i/100+1] = color;
+    output_pixels[166*i/100+1] = color;
   }
 
   // Vertically, we want to scale by a 5/3 ratio. So we need to make 5 lines out of three:  we double two lines out of three.
   uint16_t y = (5*line)/3;
-  eadk_display_push_rect((eadk_rect_t){(320 - 265) / 2, y, 265, 1}, final_output_pixels);
+  eadk_display_push_rect((eadk_rect_t){(320 - 265) / 2, y, 265, 1}, output_pixels);
   if (line%3 != 0) {
-    eadk_display_push_rect((eadk_rect_t){(320 - 265) / 2, y + 1, 265, 1}, final_output_pixels);
+    eadk_display_push_rect((eadk_rect_t){(320 - 265) / 2, y + 1, 265, 1}, output_pixels);
   }
 }
 
@@ -278,19 +257,22 @@ int main(int argc, char * argv[]) {
     gb.direct.joypad_bits.down = !eadk_keyboard_key_down(kbd, eadk_key_down);
 
     if (eadk_keyboard_key_down(kbd, eadk_key_one)) {
-      palette = palette_original;
-    }
-    if (eadk_keyboard_key_down(kbd, eadk_key_two)) {
-      palette = palette_gray;
-    }
-    if (eadk_keyboard_key_down(kbd, eadk_key_three)) {
-      palette = palette_gray_negative;
-    }
-    if (eadk_keyboard_key_down(kbd, eadk_key_four)) {
       palette = palette_peanut_GB;
     }
+    if (eadk_keyboard_key_down(kbd, eadk_key_two)) {
+      palette = palette_original;
+    }
+    if (eadk_keyboard_key_down(kbd, eadk_key_three)) {
+      palette = palette_gray;
+    }
+    if (eadk_keyboard_key_down(kbd, eadk_key_four)) {
+      palette = palette_gray_negative;
+    }
     if (eadk_keyboard_key_down(kbd, eadk_key_five)) {
-      palette = palette_virtual_boy;
+      palette = palette_vb;
+    }
+    if (eadk_keyboard_key_down(kbd, eadk_key_six)) {
+      palette = palette_green;
     }
     if (eadk_keyboard_key_down(kbd, eadk_key_plus)) {
       gb.display.lcd_draw_line = lcd_draw_line_maximized_ratio;
