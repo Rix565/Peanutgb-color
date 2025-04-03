@@ -57,7 +57,7 @@ eadk_color_t palette_pastel[4] = {0xfeb5, 0xfc4e, 0x9221, 0x3829};
 eadk_color_t palette_virtualboy[4] = {eadk_color_black, 0x5000, 0xa000, 0xf800};
 eadk_color_t palette_gameboy[4] = {0x9709, 0x858a, 0x6468, 0x4305};
 eadk_color_t palette_purple[4] = {0xf53f, 0xb31c, 0x6117, 0x182b};
-eadk_color_t * palette = palette_original;
+eadk_color_t * palette = palette_gameboy;
 
 inline eadk_color_t eadk_color_from_gb_pixel(uint8_t gb_pixel) {
     uint8_t gb_color = gb_pixel & 0x3;
