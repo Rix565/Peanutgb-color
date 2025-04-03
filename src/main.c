@@ -51,12 +51,12 @@ void gb_error(struct gb_s *gb, const enum gb_error_e gb_err, const uint16_t val)
 }
 
 eadk_color_t palette_blue[4] = {0xc75e, 0x7d5f, 0x7316, 0x1807};
-eadk_color_t palette_green[4] = {0xdff3, 0x8fcb, 0x1487, 0x201};
+eadk_color_t palette_green[4] = {0xeff4, 0x86e9, 0x1487, 0x201};
 eadk_color_t palette_orange[4] = {0xdfef1, 0xfd08, 0xd284, 0x4800};
 eadk_color_t palette_pastel[4] = {0xfeb5, 0xfc4e, 0xa22c, 0x3806};
 eadk_color_t palette_virtualboy[4] = {eadk_color_black, 0x5000, 0xa000, 0xf800};
 eadk_color_t palette_pale[4] = {eadk_color_white, 0xa55a, 0x6373, 0x1906};
-eadk_color_t palette_purple[4] = {0xfebf, 0xb31c, 0x6117, 0x182b};
+eadk_color_t palette_purple[4] = {0xe53e, 0xb31c, 0x6117, 0x182b};
 eadk_color_t * palette = palette_blue;
 
 inline eadk_color_t eadk_color_from_gb_pixel(uint8_t gb_pixel) {
