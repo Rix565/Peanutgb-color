@@ -50,12 +50,13 @@ void gb_error(struct gb_s *gb, const enum gb_error_e gb_err, const uint16_t val)
   return;
 }
 
-eadk_color_t palette_peanut_GB[4] = {0xaf5f, 0x7d5f, 0x7316, 0x1807};
-eadk_color_t palette_original[4] = {0xdff5, 0x9e27, 0x1487, 0x167};
-eadk_color_t palette_gray[4] = {0xff12, 0xfc8a, 0xd284, 0x4800};
-eadk_color_t palette_gray_negative[4] = {0xfeb5, 0xfc4e, 0xa22c, 0x3806};
-eadk_color_t palette_vb[4] = {eadk_color_black, 0x5000, 0xa000, 0xf800};
-eadk_color_t palette_green[4] = {0xc50f, 0x844a, 0x52e6, 0x31c3};
+eadk_color_t palette_blue[4] = {0xd7dc, 0x7d5f, 0x7316, 0x1807};
+eadk_color_t palette_green[4] = {0xff12, 0x9e27, 0x1487, 0x201};
+eadk_color_t palette_orange[4] = {0xdfef1, 0xfd08, 0xd284, 0x4800};
+eadk_color_t palette_pastel[4] = {0xfeb5, 0xfc4e, 0x9221, 0x3829};
+eadk_color_t palette_virtualboy[4] = {eadk_color_black, 0x5000, 0xa000, 0xf800};
+eadk_color_t palette_gameboy[4] = {0x9709, 0x858a, 0x6468, 0x4305};
+eadk_color_t palette_purple[4] = {0xf53f, 0xb31c, 0x6117, 0x182b};
 eadk_color_t * palette = palette_original;
 
 inline eadk_color_t eadk_color_from_gb_pixel(uint8_t gb_pixel) {
@@ -257,22 +258,25 @@ int main(int argc, char * argv[]) {
     gb.direct.joypad_bits.down = !eadk_keyboard_key_down(kbd, eadk_key_down);
 
     if (eadk_keyboard_key_down(kbd, eadk_key_one)) {
-      palette = palette_peanut_GB;
+      palette = palette_gameboy;
     }
     if (eadk_keyboard_key_down(kbd, eadk_key_two)) {
-      palette = palette_original;
+      palette = palette_blue;
     }
     if (eadk_keyboard_key_down(kbd, eadk_key_three)) {
-      palette = palette_gray;
+      palette = palette_green;
     }
     if (eadk_keyboard_key_down(kbd, eadk_key_four)) {
-      palette = palette_gray_negative;
+      palette = palette_orange;
     }
     if (eadk_keyboard_key_down(kbd, eadk_key_five)) {
-      palette = palette_vb;
+      palette = palette_pastel;
     }
     if (eadk_keyboard_key_down(kbd, eadk_key_six)) {
-      palette = palette_green;
+      palette = palette_purple;
+    }
+	if (eadk_keyboard_key_down(kbd, eadk_key_eight)) {
+      palette = palette_virtualboy;
     }
     if (eadk_keyboard_key_down(kbd, eadk_key_plus)) {
       gb.display.lcd_draw_line = lcd_draw_line_maximized_ratio;
